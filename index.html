@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>GioTech MiniGPT</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:," />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="chat-header">
+      <div class="title-group">
+        <span class="logo-dot"></span>
+        <div>
+          <h1>GioTech MiniGPT</h1>
+          <p class="subtitle">Powered by Medina OpenAI · Local API on <code>localhost:4000</code></p>
+        </div>
+      </div>
+      <div class="status-pill" id="status-pill">
+        <span class="status-dot"></span>
+        <span class="status-text">API ready</span>
+      </div>
+    </header>
+
+    <main class="chat-window">
+      <div class="messages" id="messages">
+        <div class="message bot">
+          <div class="bubble">
+           <strong>GioTech MiniGPT:</strong>
+           Welcome! I'm a custom AI assistant powered by Medina OpenAI. How can I help you today?
+        </div>
+       </div>
+      </div>
+    </main>
+
+    <form id="chat-form" class="input-bar" autocomplete="off">
+      <input
+        type="text"
+        id="user-input"
+        placeholder="Type a message and press Enter..."
+        autofocus
+      />
+      <button type="submit" id="send-btn">Send</button>
+    </form>
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
