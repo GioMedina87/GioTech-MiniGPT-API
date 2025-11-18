@@ -43,6 +43,7 @@ async function googleSearch(query) {
 }
 
 // ---- /chat endpoint for GioTech mini GPT ----
+// ---- Simple /chat endpoint WITHOUT Google Search ----
 app.post("/chat", async (req, res) => {
   try {
     const userMessage = (req.body.message || "").trim();
@@ -50,23 +51,10 @@ app.post("/chat", async (req, res) => {
       return res.status(400).json({ error: "Message is required." });
     }
 
-    const searchResults = await googleSearch(userMessage);
-
-    let context = "Search results:\n";
-    if (searchResults.length === 0) {
-      context += "- (No results found or search failed)\n";
-    } else {
-      searchResults.forEach((r, i) => {
-        context += `Result ${i + 1}:\nTitle: ${r.title}\nSnippet: ${r.snippet}\nLink: ${r.link}\n\n`;
-      });
-    }
-
     const systemPrompt = `
 You are GioTech Mini GPT, an assistant created by Gio.
-Use the search results below to answer the user's question with up-to-date info.
-If the results are weak or unrelated, say so honestly.
-
-${context}
+Answer the user's questions clearly and helpfully.
+If you don't know something, say you don't know instead of making it up.
 `;
 
     const completion = await openai.chat.completions.create({
@@ -89,7 +77,4 @@ ${context}
   }
 });
 
-app.listen(port, () => {
-  console.log(`GioTech mini GPT backend listening on port ${port}`);
-});
 
