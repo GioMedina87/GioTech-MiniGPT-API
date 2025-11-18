@@ -80,4 +80,9 @@ If you don't know something, say you don't know instead of making it up.
   }
 });
 
+app.listen(port, () => {
+  console.log(`GioTech mini GPT backend running on port ${port}`);
+});
+
+
 
