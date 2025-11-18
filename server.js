@@ -4,6 +4,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 import OpenAI from "openai";
+import bodyParser from "body-parser";
+
 
 dotenv.config();
 
@@ -15,7 +17,8 @@ const openai = new OpenAI({
 });
 
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
+
 
 // ---- Google Custom Search helper ----
 async function googleSearch(query) {
