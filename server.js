@@ -49,17 +49,26 @@ async function googleSearch(query) {
 // ---- Simple /chat endpoint WITHOUT Google Search ----
 app.post("/chat", async (req, res) => {
   try {
-    const userMessage = (req.body.message || "").trim();
-    if (!userMessage) {
-      return res.status(400).json({ error: "Message is required." });
+    const userMessage = req.body.message || "";
+
+    // 1) Try web search, but don't crash if it fails
+    let webContext = null;
+    try {
+      webContext = await googleSearch(userMessage);
+    } catch (err) {
+      console.warn("googleSearch threw an error (ignored):", err.message);
     }
 
-    const systemPrompt = `
-You are GioTech Mini GPT, an assistant created by Gio.
-Answer the user's questions clearly and helpfully.
-If you don't know something, say you don't know instead of making it up.
-`;
+    // 2) Build system prompt
+    const baseSystemPrompt =
+      "You are GioTech MiniGPT, a helpful HVAC/tech assistant created by Gio Medina. " +
+      "Explain things clearly like you’re talking to a friend who’s new to the topic.";
 
+    const systemPrompt = webContext
+      ? `${baseSystemPrompt}\n\nYou also have the following live web search results. Use them to answer the question, but if they look wrong or incomplete, say so and answer as best you can.\n\n${webContext}`
+      : baseSystemPrompt;
+
+    // 3) Ask OpenAI
     const completion = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
       messages: [
@@ -70,7 +79,7 @@ If you don't know something, say you don't know instead of making it up.
     });
 
     const reply =
-      completion.choices?.[0]?.message?.content?.trim() ||
+      completion.choices[0]?.message?.content?.trim() ||
       "Sorry, I couldn't generate a response.";
 
     res.json({ reply });
@@ -80,9 +89,6 @@ If you don't know something, say you don't know instead of making it up.
   }
 });
 
-app.listen(port, () => {
-  console.log(`GioTech mini GPT backend running on port ${port}`);
-});
 
 
 
