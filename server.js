@@ -5,7 +5,6 @@ import dotenv from "dotenv";
 import fetch from "node-fetch";
 import OpenAI from "openai";
 
-
 dotenv.config();
 
 const app = express();
@@ -18,12 +17,16 @@ const openai = new OpenAI({
 app.use(cors());
 app.use(express.json());
 
-
-
-// ---- Google Custom Search helper ----
+// ---- (optional) Old Google Custom Search helper ----
+// You can delete this whole function later if you want, it's not used now.
 async function googleSearch(query) {
   const apiKey = process.env.GOOGLE_API_KEY;
   const cx = process.env.GOOGLE_CX;
+
+  if (!apiKey || !cx) {
+    console.warn("Missing GOOGLE_API_KEY or GOOGLE_CX");
+    return [];
+  }
 
   const url = new URL("https://www.googleapis.com/customsearch/v1");
   url.searchParams.set("key", apiKey);
@@ -44,7 +47,8 @@ async function googleSearch(query) {
     link: item.link,
   }));
 }
-// Simple web search helper using SerpAPI
+
+// ---- Simple web search helper using SerpAPI ----
 async function webSearch(query) {
   const apiKey = process.env.SERPAPI_KEY;
   if (!apiKey) {
@@ -52,28 +56,41 @@ async function webSearch(query) {
     return "No web search available (missing SERPAPI_KEY).";
   }
 
-  const url =
-    "https://serpapi.com/search.json?q=" +
-    encodeURIComponent(query) +
-    "&engine=google&api_key=" +
-    apiKey;
+  const url = new URL("https://serpapi.com/search.json");
+  url.searchParams.set("q", query);
+  url.searchParams.set("engine", "google");
+  url.searchParams.set("api_key", apiKey);
 
-  const res = await fetch(url);
-  if (!res.ok) {
-    console.error("SerpAPI error:", res.status, await res.text());
+  let res;
+  try {
+    res = await fetch(url.toString());
+  } catch (err) {
+    console.error("SerpAPI fetch error:", err);
     return "Web search failed.";
   }
 
-  const data = await res.json();
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    console.error("SerpAPI error:", res.status, text);
+    return "Web search failed.";
+  }
+
+  let data;
+  try {
+    data = await res.json();
+  } catch (err) {
+    console.error("SerpAPI JSON error:", err);
+    return "Web search failed.";
+  }
 
   // Take a few top results and squash into a short text snippet
   const snippets = [];
-  if (data.organic_results) {
-    for (const r of data.organic_results.slice(0, 3)) {
-      const title = r.title || "";
-      const snippet = r.snippet || "";
-      snippets.push(`Title: ${title}\nSnippet: ${snippet}`);
-    }
+  const results = data.organic_results || [];
+  for (const r of results.slice(0, 3)) {
+    const title = r.title || "";
+    const snippet = r.snippet || "";
+    const link = r.link || "";
+    snippets.push(`Title: ${title}\nSnippet: ${snippet}\nLink: ${link}`);
   }
 
   if (!snippets.length) {
@@ -83,27 +100,27 @@ async function webSearch(query) {
   return snippets.join("\n\n");
 }
 
-// ---- /chat endpoint for GioTech mini GPT ----
-// ---- Simple /chat endpoint WITHOUT Google Search ----
+// ---- /chat endpoint for GioTech MiniGPT ----
 app.post("/chat", async (req, res) => {
   try {
     const userMessage = req.body.message || "";
 
     // 1) Try web search, but don't crash if it fails
-    let webContext = null;
+    let webContext = "";
     try {
-      webContext = await googleSearch(userMessage);
+      webContext = await webSearch(userMessage);
     } catch (err) {
-      console.warn("googleSearch threw an error (ignored):", err.message);
+      console.warn("webSearch threw an error (ignored):", err.message);
+      webContext = "";
     }
 
     // 2) Build system prompt
     const baseSystemPrompt =
       "You are GioTech MiniGPT, a helpful HVAC/tech assistant created by Gio Medina. " +
-      "Explain things clearly like you’re talking to a friend who’s new to the topic.";
+      "Explain things clearly like you're talking to a friend who's new to the topic.";
 
     const systemPrompt = webContext
-      ? `${baseSystemPrompt}\n\nYou also have the following live web search results. Use them to answer the question, but if they look wrong or incomplete, say so and answer as best you can.\n\n${webContext}`
+      ? `${baseSystemPrompt}\n\nYou also have the following live web search results. Use them to answer the question when relevant:\n\n${webContext}`
       : baseSystemPrompt;
 
     // 3) Ask OpenAI
@@ -117,7 +134,7 @@ app.post("/chat", async (req, res) => {
     });
 
     const reply =
-      completion.choices[0]?.message?.content?.trim() ||
+      completion.choices?.[0]?.message?.content?.trim() ||
       "Sorry, I couldn't generate a response.";
 
     res.json({ reply });
@@ -125,6 +142,10 @@ app.post("/chat", async (req, res) => {
     console.error("Error in /chat:", err);
     res.status(500).json({ error: "Server error" });
   }
+});
+
+app.listen(port, () => {
+  console.log(`GioTech mini GPT backend running on port ${port}`);
 });
 
 
