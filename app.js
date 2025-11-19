@@ -1,4 +1,4 @@
-const API_URL = "https://giotech-minigpt-api.onrender.com/chat";
+const API_URL = "https://giotech-mini-gpt-api.onrender.com/chat";
 
 const messagesEl = document.getElementById("messages");
 const form = document.getElementById("chat-form");

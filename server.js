@@ -44,6 +44,44 @@ async function googleSearch(query) {
     link: item.link,
   }));
 }
+// Simple web search helper using SerpAPI
+async function webSearch(query) {
+  const apiKey = process.env.SERPAPI_KEY;
+  if (!apiKey) {
+    console.warn("SERPAPI_KEY is missing");
+    return "No web search available (missing SERPAPI_KEY).";
+  }
+
+  const url =
+    "https://serpapi.com/search.json?q=" +
+    encodeURIComponent(query) +
+    "&engine=google&api_key=" +
+    apiKey;
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    console.error("SerpAPI error:", res.status, await res.text());
+    return "Web search failed.";
+  }
+
+  const data = await res.json();
+
+  // Take a few top results and squash into a short text snippet
+  const snippets = [];
+  if (data.organic_results) {
+    for (const r of data.organic_results.slice(0, 3)) {
+      const title = r.title || "";
+      const snippet = r.snippet || "";
+      snippets.push(`Title: ${title}\nSnippet: ${snippet}`);
+    }
+  }
+
+  if (!snippets.length) {
+    return "No web results found.";
+  }
+
+  return snippets.join("\n\n");
+}
 
 // ---- /chat endpoint for GioTech mini GPT ----
 // ---- Simple /chat endpoint WITHOUT Google Search ----
