@@ -1,107 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>GioTech MiniGPT</title>
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1"
-    />
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <!-- Boot screen overlay -->
-    <div id="boot-screen">
-      <div class="boot-inner">
-        <h1 class="boot-title">GioTech MiniGPT</h1>
-        <p class="boot-subtitle">Booting Medina OpenAI Engine...</p>
+<head>
+  <meta charset="UTF-8" />
+  <title>GioTech MiniGPT</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Boot screen overlay -->
+  <div id="boot-screen">
+    <div class="boot-inner">
+      <h1 class="boot-title">GIOTECH MINIGPT</h1>
+      <p class="boot-subtitle">Booting Medina OpenAI Engine...</p>
 
-        <div class="boot-steps">
-          <p id="boot-line-1" class="boot-line">
-            Starting core systems...
-          </p>
-          <p id="boot-line-2" class="boot-line">
-            Linking to OpenAI...
-          </p>
-          <p id="boot-line-3" class="boot-line">
-            Warming up Render server...
-          </p>
-          <p id="boot-line-4" class="boot-line">
-            Preparing chat interface...
-          </p>
-        </div>
-
-        <div class="boot-bar">
-          <div class="boot-bar-fill"></div>
-        </div>
-
-        <div class="boot-dots">
-          <span></span><span></span><span></span>
-        </div>
-
-        <p class="boot-hint">
-          If this takes a bit, Render is just waking up 😅
+      <div class="boot-steps">
+        <p id="boot-line-1" class="boot-line">
+          Starting core systems...
+        </p>
+        <p id="boot-line-2" class="boot-line">
+          Linking to OpenAI...
+        </p>
+        <p id="boot-line-3" class="boot-line">
+          Warming up Render server...
+        </p>
+        <p id="boot-line-4" class="boot-line">
+          Preparing chat interface...
         </p>
       </div>
+
+      <div class="boot-bar">
+        <div class="boot-bar-fill"></div>
+      </div>
+
+      <div class="boot-dots">
+        <span></span><span></span><span></span><span></span>
+      </div>
+
+      <p class="boot-hint">
+        If this takes a bit, Render is just waking up 😅
+      </p>
     </div>
+  </div>
 
-    <!-- Main app shell -->
-    <div id="app-shell" class="app-shell" hidden>
-      <header class="chat-header">
-        <div class="title-group">
-          <span class="logo-dot"></span>
-          <div>
-            <h1>GIOTECH MINIGPT</h1>
-            <p class="subtitle">
-              Custom AI assistant • Backend on Render • OpenAI-powered
-            </p>
+  <!-- Main app shell -->
+  <div id="app-shell" class="app-shell" hidden>
+    <header class="chat-header">
+      <div class="title-group">
+        <span class="logo-dot"></span>
+        <div>
+          <h1>GIOTECH MINIGPT</h1>
+          <p class="subtitle">
+            Custom AI assistant • Backend on Render • OpenAI-powered
+          </p>
+        </div>
+      </div>
+
+      <div class="status-pill" id="status-pill">
+        <span class="status-dot"></span>
+        <span class="status-text" id="status-text">
+          Waiting for first response...
+        </span>
+      </div>
+    </header>
+
+    <main class="chat-window">
+      <div class="messages" id="messages">
+        <div class="message bot">
+          <div class="bubble">
+            👋 Hey, I’m GioTech MiniGPT — your custom Medina OpenAI assistant.
+            Ask me anything about HVAC, BAS, tech, or life and I’ll do my best
+            to help.<br /><br />
+            💡 Tip: Type <code>web: your question</code> to run a real web
+            search (when configured).
           </div>
         </div>
+      </div>
+    </main>
 
-        <div class="status-pill" id="status-pill">
-          <span class="status-dot"></span>
-          <span class="status-text" id="status-text">
-            Waiting for first response…
-          </span>
-        </div>
-      </header>
+    <!-- Single quick button + input bar -->
+    <form id="chat-form" class="input-bar" autocomplete="off">
+      <div class="suggestion-row">
+        <button
+          type="button"
+          id="weather-btn"
+          class="suggestion-btn"
+          data-prompt="Give me the current day of the week, full date, local time, and current weather conditions for San Jose, California."
+        >
+          📅 Day / Date / Time / Weather
+        </button>
+      </div>
 
-      <main class="chat-window">
-        <div class="messages" id="messages">
-          <div class="message bot">
-            <div class="bubble">
-              👋 Hey, I’m GioTech MiniGPT — your custom Medina OpenAI assistant.
-              Ask me anything about HVAC, BAS, tech, or life and I’ll do my best
-              to help.
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <!-- Single quick button + input bar -->
-      <form id="chat-form" class="input-bar" autocomplete="off">
-        <div class="suggestion-row">
-          <button
-            type="button"
-            class="suggestion-btn"
-            data-prompt="Give me the current day of the week, full date, local time, and current weather conditions for San Jose, California."
-          >
-            📅 Day / Date / Time / Weather
-          </button>
-        </div>
-
+      <div class="input-row">
         <input
           type="text"
           id="user-input"
-          placeholder="Type a message or tap the weather button…"
+          placeholder="Type a message or tap the weather button..."
         />
         <button id="send-btn" type="submit">SEND</button>
-      </form>
-    </div>
+      </div>
+    </form>
+  </div>
 
-    <script src="app.js" defer></script>
-  </body>
+  <script src="app.js" defer></script>
+</body>
 </html>
+
 
 
 

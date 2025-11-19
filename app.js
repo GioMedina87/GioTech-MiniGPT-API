@@ -1,16 +1,25 @@
-/* ==========================
-   GioTech MiniGPT – Frontend
-   ========================== */
+/* ===========================
+   GioTech MiniGPT - Frontend
+   =========================== */
 
-const API_URL = "https://giotech-mini-gpt.onrender.com/chat";
+const API_BASE = "https://giotech-mini-gpt.onrender.com";
 
 const messagesEl = document.getElementById("messages");
 const form = document.getElementById("chat-form");
 const input = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
+const weatherBtn = document.getElementById("weather-btn");
 const statusPill = document.getElementById("status-pill");
 const statusText = document.getElementById("status-text");
-const suggestionButtons = document.querySelectorAll(".suggestion-btn");
+const bootScreen = document.getElementById("boot-screen");
+const appShell = document.getElementById("app-shell");
+const bootLines = [
+  document.getElementById("boot-line-1"),
+  document.getElementById("boot-line-2"),
+  document.getElementById("boot-line-3"),
+  document.getElementById("boot-line-4"),
+];
+const bootBarFill = document.querySelector(".boot-bar-fill");
 
 /* ----- Helpers ----- */
 
@@ -27,35 +36,85 @@ function addMessage(text, sender = "bot") {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-function setStatus(isReady, text) {
-  statusPill.classList.toggle("ready", isReady);
-  statusPill.classList.toggle("connecting", !isReady);
+function setStatus(mode, text) {
+  statusPill.classList.remove("ready", "error");
+  if (mode === "ready") statusPill.classList.add("ready");
+  if (mode === "error") statusPill.classList.add("error");
   statusText.textContent = text;
 }
 
-function showTyping() {
-  const row = document.createElement("div");
-  row.className = "message bot";
-  row.id = "typing-row";
-
-  const bubble = document.createElement("div");
-  bubble.className = "bubble";
-
-  const dots = document.createElement("div");
-  dots.className = "typing-dots";
-  dots.innerHTML = "<span></span><span></span><span></span>";
-
-  bubble.appendChild(dots);
-  row.appendChild(bubble);
-  messagesEl.appendChild(row);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
+function setBusy(isBusy) {
+  sendBtn.disabled = isBusy;
+  weatherBtn.disabled = isBusy;
+  input.disabled = isBusy;
 }
 
-function removeTyping() {
-  const row = document.getElementById("typing-row");
-  if (row && row.parentNode) {
-    row.parentNode.removeChild(row);
+/* ----- Boot sequence ----- */
+
+function runBootSequence() {
+  let step = 0;
+  const totalSteps = bootLines.length;
+
+  bootLines.forEach((l) => l.classList.remove("active"));
+  bootBarFill.style.width = "0%";
+
+  const interval = setInterval(() => {
+    if (step < totalSteps) {
+      bootLines.forEach((l, idx) => {
+        l.classList.toggle("active", idx === step);
+      });
+      const pct = ((step + 1) / totalSteps) * 100;
+      bootBarFill.style.width = `${pct}%`;
+      step += 1;
+    } else {
+      clearInterval(interval);
+      // quick delay then show app
+      setTimeout(() => {
+        bootScreen.style.display = "none";
+        appShell.hidden = false;
+        setStatus("ready", "API ready");
+      }, 400);
+    }
+  }, 600);
+}
+
+/* ----- API calls ----- */
+
+async function callChatAPI(message) {
+  const res = await fetch(`${API_BASE}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Chat API error: ${res.status}`);
   }
+
+  const data = await res.json();
+  return data.reply;
+}
+
+async function callWeatherAPI() {
+  // You can change these to another default city if you want
+  const payload = {
+    city: "San Jose",
+    state: "California",
+    country: "USA",
+  };
+
+  const res = await fetch(`${API_BASE}/weather`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Weather API error: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.reply;
 }
 
 /* ----- Form submit ----- */
@@ -67,90 +126,55 @@ form.addEventListener("submit", async (e) => {
 
   addMessage(text, "user");
   input.value = "";
-  sendBtn.disabled = true;
-
-  showTyping();
-  setStatus(false, "Talking to Medina OpenAI…");
+  setBusy(true);
+  setStatus("ready", "Talking to MiniGPT...");
 
   try {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text }),
-    });
-
-    removeTyping();
-
-    if (!res.ok) {
-      console.error("API error:", res.status);
-      setStatus(false, "API error – check backend");
-      addMessage("Hmm, something went wrong talking to the API.", "bot");
-      return;
-    }
-
-    const data = await res.json();
-    const reply = data.reply || "I couldn't generate a response.";
-    setStatus(true, "API ready");
+    const reply = await callChatAPI(text);
     addMessage(reply, "bot");
+    setStatus("ready", "API ready");
   } catch (err) {
-    console.error("Network error:", err);
-    removeTyping();
-    setStatus(false, "Connection error");
+    console.error(err);
     addMessage(
-      "I couldn't reach the GioTech API. Is the backend awake on Render?",
+      "I couldn't reach the GioTech API. Please check that the backend is awake on Render.",
       "bot"
     );
+    setStatus("error", "Connection error");
   } finally {
-    sendBtn.disabled = false;
-    input.focus();
+    setBusy(false);
   }
 });
 
-/* ----- Suggestion button (auto-send) ----- */
+/* ----- Weather button ----- */
 
-suggestionButtons.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const prompt = btn.getAttribute("data-prompt") || "";
-    if (!prompt) return;
+weatherBtn.addEventListener("click", async () => {
+  const prompt = weatherBtn.dataset.prompt;
+  addMessage(prompt, "user");
 
-    input.value = prompt;
-    // Auto-submit as if you typed it
-    form.requestSubmit();
-  });
+  setBusy(true);
+  setStatus("ready", "Checking date, time & weather...");
+
+  try {
+    const reply = await callWeatherAPI();
+    addMessage(reply, "bot");
+    setStatus("ready", "API ready");
+  } catch (err) {
+    console.error(err);
+    addMessage(
+      "I'm having trouble fetching live weather right now. You can still ask me other questions!",
+      "bot"
+    );
+    setStatus("error", "Weather error");
+  } finally {
+    setBusy(false);
+  }
 });
 
-/* ----- Boot screen animation ----- */
+/* ----- Init ----- */
 
-window.addEventListener("load", () => {
-  const boot = document.getElementById("boot-screen");
-  const app = document.getElementById("app-shell");
-
-  const steps = [
-    "Starting core systems...",
-    "Linking to OpenAI...",
-    "Warming up Render server...",
-    "Preparing chat interface...",
-  ];
-
-  steps.forEach((msg, i) => {
-    const line = document.getElementById(`boot-line-${i + 1}`);
-    if (!line) return;
-
-    setTimeout(() => {
-      line.textContent = msg;
-      line.classList.add("active");
-    }, i * 800);
-  });
-
-  // Show main app after ~3.5s
-  setTimeout(() => {
-    boot.classList.add("hidden");
-    app.hidden = false;
-    input.focus();
-    setStatus(false, "Connecting…");
-  }, 3500);
+document.addEventListener("DOMContentLoaded", () => {
+  runBootSequence();
 });
-
 
 
 
