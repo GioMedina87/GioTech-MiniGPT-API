@@ -2,7 +2,16 @@
    GioTech MiniGPT - Frontend
    =========================== */
 
-const API_BASE = "https://giotech-mini-gpt.onrender.com";
+// ===== API base selection =====
+const USE_LOCAL = false; // <- set this to false before pushing for GitHub/Render demo
+
+const BASE_URL = USE_LOCAL
+  ? "http://localhost:4000"
+  : "https://giotech-mini-gpt.onrender.com";
+
+const API_URL = `${BASE_URL}/chat`;
+const WEATHER_URL = `${BASE_URL}/weather`;
+
 
 const messagesEl = document.getElementById("messages");
 const form = document.getElementById("chat-form");
