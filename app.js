@@ -1,6 +1,6 @@
-/* ===========================
+/* ==========================
    GioTech MiniGPT – Frontend
-=========================== */
+   ========================== */
 
 const API_URL = "https://giotech-mini-gpt.onrender.com/chat";
 
@@ -9,19 +9,11 @@ const form = document.getElementById("chat-form");
 const input = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
 const statusPill = document.getElementById("status-pill");
-const statusDot = statusPill.querySelector(".status-dot");
-const statusText = statusPill.querySelector(".status-text");
+const statusText = document.getElementById("status-text");
+const suggestionButtons = document.querySelectorAll(".suggestion-btn");
 
-/* Quick suggestion buttons -> fill input */
-document.querySelectorAll(".suggestion-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const prompt = btn.dataset.prompt || btn.textContent.trim();
-    input.value = prompt;
-    input.focus();
-  });
-});
+/* ----- Helpers ----- */
 
-/* Add a message bubble */
 function addMessage(text, sender = "bot") {
   const row = document.createElement("div");
   row.className = `message ${sender}`;
@@ -33,75 +25,79 @@ function addMessage(text, sender = "bot") {
   row.appendChild(bubble);
   messagesEl.appendChild(row);
   messagesEl.scrollTop = messagesEl.scrollHeight;
-  return row;
 }
 
-/* Typing indicator */
-function addTypingIndicator() {
+function setStatus(isReady, text) {
+  statusPill.classList.toggle("ready", isReady);
+  statusPill.classList.toggle("connecting", !isReady);
+  statusText.textContent = text;
+}
+
+function showTyping() {
   const row = document.createElement("div");
   row.className = "message bot";
+  row.id = "typing-row";
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  bubble.textContent = "…";
 
+  const dots = document.createElement("div");
+  dots.className = "typing-dots";
+  dots.innerHTML = "<span></span><span></span><span></span>";
+
+  bubble.appendChild(dots);
   row.appendChild(bubble);
   messagesEl.appendChild(row);
   messagesEl.scrollTop = messagesEl.scrollHeight;
-  return row;
 }
 
-/* Status pill updates */
-function setStatus(ok, text) {
-  statusDot.style.background = ok ? "#22c55e" : "#f97373";
-  statusDot.style.boxShadow = ok
-    ? "0 0 7px rgba(34,197,94,0.9)"
-    : "0 0 7px rgba(248,113,113,0.9)";
-  if (text) statusText.textContent = text;
+function removeTyping() {
+  const row = document.getElementById("typing-row");
+  if (row && row.parentNode) {
+    row.parentNode.removeChild(row);
+  }
 }
 
-/* Form submit -> talk to backend */
+/* ----- Form submit ----- */
+
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const message = input.value.trim();
-  if (!message) return;
+  const text = input.value.trim();
+  if (!text) return;
 
-  addMessage(message, "user");
+  addMessage(text, "user");
   input.value = "";
   sendBtn.disabled = true;
-  setStatus(true, "Talking to Medina OpenAI…");
 
-  const typingRow = addTypingIndicator();
+  showTyping();
+  setStatus(false, "Talking to Medina OpenAI…");
 
   try {
     const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message: text }),
     });
 
-    const data = await res.json().catch(() => null);
+    removeTyping();
 
-    messagesEl.removeChild(typingRow);
-
-    if (!res.ok || !data || !data.reply) {
-      console.error("API error:", data);
+    if (!res.ok) {
+      console.error("API error:", res.status);
       setStatus(false, "API error – check backend");
-      addMessage(
-        "Hmm, something went wrong talking to the GioTech API. Please try again in a moment.",
-        "bot"
-      );
+      addMessage("Hmm, something went wrong talking to the API.", "bot");
       return;
     }
 
+    const data = await res.json();
+    const reply = data.reply || "I couldn't generate a response.";
     setStatus(true, "API ready");
-    addMessage(data.reply, "bot");
+    addMessage(reply, "bot");
   } catch (err) {
     console.error("Network error:", err);
-    messagesEl.removeChild(typingRow);
+    removeTyping();
     setStatus(false, "Connection error");
     addMessage(
-      "I couldn’t reach the GioTech API. The Render server might still be waking up or offline.",
+      "I couldn't reach the GioTech API. Is the backend awake on Render?",
       "bot"
     );
   } finally {
@@ -110,70 +106,51 @@ form.addEventListener("submit", async (e) => {
   }
 });
 
-/* ===========================
-   Boot Screen Logic
-=========================== */
+/* ----- Suggestion button (auto-send) ----- */
 
-async function warmupBackend() {
-  try {
-    // Light ping to wake up Render/OpenAI
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: "warmup" }),
-    });
-    const data = await res.json().catch(() => null);
-    if (res.ok && data && data.reply) {
-      return true;
-    }
-  } catch (err) {
-    console.warn("Warmup ping failed (probably just sleeping server):", err);
-  }
-  return false;
-}
+suggestionButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const prompt = btn.getAttribute("data-prompt") || "";
+    if (!prompt) return;
 
-window.addEventListener("DOMContentLoaded", async () => {
-  const bootScreen = document.getElementById("boot-screen");
-  const appShell = document.querySelector(".app-shell");
-  const bootLines = [
-    document.getElementById("boot-line-1"),
-    document.getElementById("boot-line-2"),
-    document.getElementById("boot-line-3"),
-    document.getElementById("boot-line-4"),
-  ];
-  const barFill = document.querySelector(".boot-bar-fill");
-
-  // Step text animation
-  bootLines.forEach((line, i) => {
-    setTimeout(() => {
-      if (line) line.classList.add("active");
-      // progress bar step
-      if (barFill) {
-        barFill.style.width = `${((i + 1) / bootLines.length) * 100}%`;
-      }
-    }, i * 1000);
+    input.value = prompt;
+    // Auto-submit as if you typed it
+    form.requestSubmit();
   });
-
-  // Start backend warmup in parallel
-  let backendReady = false;
-  warmupBackend().then((ok) => {
-    backendReady = ok;
-  });
-
-  // After ~4.5s, fade out boot screen & show app
-  setTimeout(() => {
-    bootScreen.style.opacity = "0";
-    bootScreen.style.transition = "opacity 0.6s ease";
-
-    setTimeout(() => {
-      bootScreen.classList.add("hidden");
-      appShell.classList.remove("hidden");
-      setStatus(
-        backendReady,
-        backendReady ? "API ready" : "Waiting for first response…"
-      );
-    }, 650);
-  }, 4200);
 });
+
+/* ----- Boot screen animation ----- */
+
+window.addEventListener("load", () => {
+  const boot = document.getElementById("boot-screen");
+  const app = document.getElementById("app-shell");
+
+  const steps = [
+    "Starting core systems...",
+    "Linking to OpenAI...",
+    "Warming up Render server...",
+    "Preparing chat interface...",
+  ];
+
+  steps.forEach((msg, i) => {
+    const line = document.getElementById(`boot-line-${i + 1}`);
+    if (!line) return;
+
+    setTimeout(() => {
+      line.textContent = msg;
+      line.classList.add("active");
+    }, i * 800);
+  });
+
+  // Show main app after ~3.5s
+  setTimeout(() => {
+    boot.classList.add("hidden");
+    app.hidden = false;
+    input.focus();
+    setStatus(false, "Connecting…");
+  }, 3500);
+});
+
+
 
 

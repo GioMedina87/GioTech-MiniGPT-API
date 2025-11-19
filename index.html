@@ -1,108 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>GioTech MiniGPT</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
-</head>
+  <head>
+    <meta charset="UTF-8" />
+    <title>GioTech MiniGPT</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Boot screen overlay -->
+    <div id="boot-screen">
+      <div class="boot-inner">
+        <h1 class="boot-title">GioTech MiniGPT</h1>
+        <p class="boot-subtitle">Booting Medina OpenAI Engine...</p>
 
-<body>
-  <!-- ⚡ GioTech Neon Boot Screen -->
-  <div id="boot-screen">
-    <div class="boot-inner">
-      <h1 class="boot-title">GioTech MiniGPT</h1>
-      <p class="boot-subtitle">Booting Medina OpenAI Engine…</p>
-
-      <div class="boot-steps">
-        <p id="boot-line-1" class="boot-line">Starting core systems…</p>
-        <p id="boot-line-2" class="boot-line">Linking to OpenAI…</p>
-        <p id="boot-line-3" class="boot-line">Warming up Render server…</p>
-        <p id="boot-line-4" class="boot-line">Preparing chat interface…</p>
-      </div>
-
-      <div class="boot-bar">
-        <div class="boot-bar-fill"></div>
-      </div>
-
-      <div class="boot-dots">
-        <span></span><span></span><span></span>
-      </div>
-
-      <p class="boot-hint">If this takes a bit, Render is just waking up 😅</p>
-    </div>
-  </div>
-
-  <!-- ⚡ Main App UI -->
-  <div class="app-shell hidden">
-    <header class="chat-header">
-      <div class="title-group">
-        <div class="logo-dot"></div>
-        <div>
-          <h1>GioTech MiniGPT</h1>
-          <p class="subtitle">
-            Custom AI assistant • Backend on Render • OpenAI-powered
+        <div class="boot-steps">
+          <p id="boot-line-1" class="boot-line">
+            Starting core systems...
+          </p>
+          <p id="boot-line-2" class="boot-line">
+            Linking to OpenAI...
+          </p>
+          <p id="boot-line-3" class="boot-line">
+            Warming up Render server...
+          </p>
+          <p id="boot-line-4" class="boot-line">
+            Preparing chat interface...
           </p>
         </div>
-      </div>
 
-      <div class="status-pill" id="status-pill">
-        <span class="status-dot"></span>
-        <span class="status-text">Booting…</span>
-      </div>
-    </header>
+        <div class="boot-bar">
+          <div class="boot-bar-fill"></div>
+        </div>
 
-    <main class="chat-window">
-      <div class="messages" id="messages">
-        <div class="message bot">
-          <div class="bubble">
-            👋 Hey, I’m <strong>GioTech MiniGPT</strong> – your custom Medina OpenAI assistant.
-            Ask me anything about HVAC, BAS, tech, or life and I’ll do my best to help.
+        <div class="boot-dots">
+          <span></span><span></span><span></span>
+        </div>
+
+        <p class="boot-hint">
+          If this takes a bit, Render is just waking up 😅
+        </p>
+      </div>
+    </div>
+
+    <!-- Main app shell -->
+    <div id="app-shell" class="app-shell" hidden>
+      <header class="chat-header">
+        <div class="title-group">
+          <span class="logo-dot"></span>
+          <div>
+            <h1>GIOTECH MINIGPT</h1>
+            <p class="subtitle">
+              Custom AI assistant • Backend on Render • OpenAI-powered
+            </p>
           </div>
         </div>
-      </div>
-    </main>
 
-    <!-- Quick suggestion prompts -->
-    <section class="suggestions">
-      <button class="suggestion-btn"
-              data-prompt="Explain how a VAV box works in a commercial HVAC system, in simple terms.">
-        VAV box basics
-      </button>
+        <div class="status-pill" id="status-pill">
+          <span class="status-dot"></span>
+          <span class="status-text" id="status-text">
+            Waiting for first response…
+          </span>
+        </div>
+      </header>
 
-      <button class="suggestion-btn"
-              data-prompt="Explain the difference between supply air and return air in HVAC.">
-        Supply vs return air
-      </button>
+      <main class="chat-window">
+        <div class="messages" id="messages">
+          <div class="message bot">
+            <div class="bubble">
+              👋 Hey, I’m GioTech MiniGPT — your custom Medina OpenAI assistant.
+              Ask me anything about HVAC, BAS, tech, or life and I’ll do my best
+              to help.
+            </div>
+          </div>
+        </div>
+      </main>
 
-      <button class="suggestion-btn"
-              data-prompt="Give me a simple explanation of building automation systems (BAS) for a beginner.">
-        BAS for beginners
-      </button>
+      <!-- Single quick button + input bar -->
+      <form id="chat-form" class="input-bar" autocomplete="off">
+        <div class="suggestion-row">
+          <button
+            type="button"
+            class="suggestion-btn"
+            data-prompt="Give me the current day of the week, full date, local time, and current weather conditions for San Jose, California."
+          >
+            📅 Day / Date / Time / Weather
+          </button>
+        </div>
 
-      <button class="suggestion-btn"
-              data-prompt="Help me prepare for an entry-level BAS graphics designer job interview.">
-        BAS graphics interview prep
-      </button>
+        <input
+          type="text"
+          id="user-input"
+          placeholder="Type a message or tap the weather button…"
+        />
+        <button id="send-btn" type="submit">SEND</button>
+      </form>
+    </div>
 
-      <!-- Day / Date / Time / Weather prompt -->
-      <button class="suggestion-btn"
-              data-prompt="Give me the current day of the week, today’s date, current time, and a quick weather summary for San Jose, California.">
-        📅 Day / Date / Time / Weather
-      </button>
-    </section>
-
-    <form id="chat-form" class="input-bar" autocomplete="off">
-      <input
-        type="text"
-        id="user-input"
-        placeholder="Type a message or tap a suggestion…"
-      />
-      <button id="send-btn" type="submit">SEND</button>
-    </form>
-  </div>
-
-  <script src="app.js"></script>
-</body>
+    <script src="app.js" defer></script>
+  </body>
 </html>
+
+
 
